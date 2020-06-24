@@ -1,3 +1,3 @@
-this is the query:
+this is the query I used to get the creatures:
 
 layout:normal t:creature (set:10E or set:M10 or set:M11 or set:M12 or set:M13 or set:M14 or set:M15 or set:ORI or set:M19 or set:M20 or set:MRD or set:DST or set:5DN or set:CHK or set:BOK or set:SOK or set:RAV or set:GPT or set:DIS or set:CSP or set:TSP or set:TSB or set:PLC or set:FUT or set:LRW or set:MOR or set:SHM or set:EVE or set:ALA or set:CON or set:ARB or set:ZEN or set:WWK or set:ROE or set:SOM or set:MBS or set:NPH or set:ISD or set:DKA or set:AVR or set:RTR or set:GTC or set:DGM or set:THS or set:BNG or set:JOU or set:KTK or set:FRF or set:DTK or set:BFZ or set:OGW or set:SOI or set:EMN or set:KLD or set:AER or set:AKH or set:HOU or set:XLN or set:RIX or set:DOM or set:GRN or set:RNA or set:WAR or set:ELD or set:THB or set:IKO)
