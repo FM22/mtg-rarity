@@ -9,7 +9,7 @@ nextPg = True
 if len(sys.argv) < 0:
   print("Specify a query to get")
 else:
-  nxtUrl = "https://api.scryfall.com/cards/search?q=" + sys.argv[1]
+  nxtUrl = "https://api.scryfall.com/cards/search?q=" + sys.argv[0]
   
   while nextPg == True:
     raw = urllib.request.urlopen(nxtUrl).read()
