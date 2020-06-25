@@ -15,8 +15,7 @@ print("Reading from " + nxtUrl)
 
 i = 1
 while nextPg == True:
-	raw = urllib.request.urlopen(nxtUrl).read()
-	data = json.loads(raw)
+	data = json.load(urllib.request.urlopen(nxtUrl))
 	if "next_page" in data:
 		nxtUrl = data["next_page"]
 	else: nextPg = False
@@ -24,7 +23,6 @@ while nextPg == True:
 	i += 1
 	cardList.extend(data["data"])
 
-txt = json.dumps(cardList)
-with open("data.json", "w+") as f:
-	f.write(txt)
+with open("data.json", "w+", encoding = "utf8") as f:
+	json.dump(cardList, f, ensure_ascii = False)
 print("Written data to data.json")
