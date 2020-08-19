@@ -33,8 +33,8 @@ inputVecs = []
 inputWords = [] #list of lists of words
 corRars = [] #list of correct rarities
 ptDict = {"*": "0", "1+*": "1"} #converts */* creatures and Goyf
-rarDict = {"common": 0, "uncommon": 1, "rare": 2, "mythic": 3} #converts rarity to target output index
-invRarDict = {v: k for k, v in rarDict.items()} #inversion (for output)
+rarDict = {"common": 0, "uncommon": 1, "rare": 2, "mythic": 2} #converts rarity to target output index
+invRarDict = {0: "common", 1: "uncommon", 2: "rare+"}
 symbDict = {"W": " white ", #symbol parser for within {} - X,Y and numbers kept as is
             "U": " blue ",
             "B": " black ",
@@ -105,20 +105,22 @@ allWords = set([w for t in inputWords for w in t]) #list all word tokens
 
 #open the generated glove dictionary
 gloveDict = {}
+dims = -1
 with open("dict.txt", encoding="utf-8") as glove:
     for line in glove:
         parts = line.split(" ")
         gloveDict[parts[0]] = [float(i) for i in parts[1:]]
+        if dims == -1: dims = len(parts) - 1 #get dimensionality of data
 
-inputWords = [[gloveDict.get(w, [0] * 300) for w in t] for t in inputWords] #vectorise words: if the word is unique to MTG it just gets set to 0
+inputWords = [[gloveDict.get(w, [0] * dims) for w in t] for t in inputWords] #vectorise words: if the word is unique to MTG it just gets set to 0
 print("Vectorised oracle text")
 
 #split data into training and test datasets
 testNames = [data[i]["name"] for i in range(len(data)) if data[i]["set"] == "m20"]
 trainVecs = [inputVecs[i] for i in range(len(inputVecs)) if not data[i]["set"] == "m20"]
 testVecs = [inputVecs[i] for i in range(len(inputVecs)) if data[i]["set"] == "m20"]
-trainWords = [inputWords[i] for i in range(len(inputWords)) if not data[i]["set"] == "m20"]
-testWords = [inputWords[i] for i in range(len(inputWords)) if data[i]["set"] == "m20"]
+trainWords = tf.ragged.constant([inputWords[i] for i in range(len(inputWords)) if not data[i]["set"] == "m20"])
+testWords = tf.ragged.constant([inputWords[i] for i in range(len(inputWords)) if data[i]["set"] == "m20"])
 trainCorRars = [corRars[i] for i in range(len(corRars)) if not data[i]["set"] == "m20"]
 testCorRars = [corRars[i] for i in range(len(corRars)) if data[i]["set"] == "m20"]
 
@@ -134,21 +136,21 @@ print("Normalised numerical data")
 wordIn = layers.Input(shape = (None, len(inputWords[0][0]))) #input layer for var-length word vec data
 numIn = layers.Input(shape = (len(inputVecs[0]), )) #input layer for fixed-length numerical data
 rnn = layers.LSTM(32)(wordIn) #RNN layer for word vec data
-numLayer = layers.Dense(16, activation = "relu")(numIn) #layer for numerical data
+numLayer = layers.Dense(20, activation = "relu")(numIn) #layer for numerical data
 merge = layers.concatenate([rnn, numLayer]) #combine the two vectors
 combLayer = layers.Dense(64, activation = "relu")(merge) #hidden intermediate layer for combined data
-out = layers.Dense(4, activation = "softmax")(combLayer) #final layer: softmax ensures output is a set of probabilities
-model = keras.models.Model(inputs = [wordIn, numIn], outputs = [out])
-model.compile(loss = "sparse_categorical_crossentropy", metrics = "sparse_categorical_accuracy") #I have no idea whether these ones are the best ones to use
+out = layers.Dense(3, activation = "softmax")(combLayer) #final layer: softmax ensures output is a set of probabilities
+model = keras.models.Model(inputs = [numIn, wordIn], outputs = [out])
+model.compile(loss = "sparse_categorical_crossentropy", metrics = "sparse_categorical_accuracy", optimizer = "adam") #I have no idea whether these ones are the best ones to use
 print("Built model")
 
 #train the model
-model.fit([tf.ragged.constant(trainWords), trainVecs], np.array(trainCorRars), epochs = 10)
+model.fit([trainVecs, trainWords], np.array(trainCorRars), epochs = 10)
 print("Trained model")
 
 #test the model
-model.evaluate([tf.ragged.constant(testWords), testVecs], np.array(testCorRars))
-pred = model.predict([tf.ragged.constant(testWords), testVecs])
-pred = [np.where(a == np.amax(a))[0][0] for a in pred] #get most likely outcome (idk why I need [0][0])
+#model.evaluate([testVecs, testWords], np.array(testCorRars))
+#pred = model.predict([testVecs, testWords])
+#pred = [np.where(a == np.amax(a))[0][0] for a in pred] #get most likely outcome (idk why I need [0][0])
 #for i in range(len(pred)): #display visual version of above test
 #    if not pred[i] == testCorRars[i]: print(testNames[i] + ": guess - " + invRarDict[pred[i]] + ", actual - " + invRarDict[testCorRars[i]] + "; " + ("correct" if pred[i] == testCorRars[i] else "wrong"))

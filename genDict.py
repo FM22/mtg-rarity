@@ -1,6 +1,7 @@
 import json
 import unidecode
 import re
+from sklearn.decomposition import PCA
 
 #read and parse the datafile
 with open("data.json", encoding = "utf8") as f:
@@ -22,12 +23,23 @@ for card in data:
     orTxt = re.sub("'", "", orTxt)  #remove apostrophes
     words.update(w for w in orTxt.lower().split(" ") if w.isalnum()) #grab all alphanumeric tokens
 print("Found all tokens")
-print(words)
+
 #write over the relevant section of dictionary from the GloVe file
 gloveDict = {}
 with open("glove.txt", encoding = "utf-8") as glove:
-    with open("dict.txt", "w", encoding = "utf-8") as out:
-        for line in glove:
-            if(line.split(" ")[0] in words): #only save words we will actually look up for memory reasons
-                print(line.split(" ")[0])
-                out.write(line)
+    for line in glove:
+        (word, vec) = line.split(" ", maxsplit = 1) #only split at first space at first
+        if(word in words): #only save words we will actually look up for memory reasons
+            vec = [float(n) for n in vec.split(" ")] #convert to numbers
+            gloveDict[word] = vec
+print("Constructed dictionary")
+
+#reduce dimensions using PCA
+pca = PCA(n_components = 20)
+wordList = list(gloveDict.keys()) #enforce consistent order
+transVecs = pca.fit_transform([gloveDict[w] for w in wordList]) #do PCA
+textVecs = [wordList[j] + " " + " ".join(str(i) for i in transVecs[j]) for j in range(len(wordList))] #convert to text form
+print("Completed PCA")
+
+with open("dict.txt", "w", encoding = "utf-8") as out:
+    out.write("\n".join(l for l in textVecs))
