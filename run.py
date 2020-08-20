@@ -9,6 +9,7 @@ from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras import layers
 from tensorflow import keras
 from num2words import num2words
+from model import DualModel
 
 #read and parse the datafile
 with open("data.json", encoding = "utf8") as f:
@@ -140,7 +141,7 @@ numLayer = layers.Dense(20, activation = "relu")(numIn) #layer for numerical dat
 merge = layers.concatenate([rnn, numLayer]) #combine the two vectors
 combLayer = layers.Dense(64, activation = "relu")(merge) #hidden intermediate layer for combined data
 out = layers.Dense(3, activation = "softmax")(combLayer) #final layer: softmax ensures output is a set of probabilities
-model = keras.models.Model(inputs = [numIn, wordIn], outputs = [out])
+model = DualModel(inputs = [numIn, wordIn], outputs = [out])
 model.compile(loss = "sparse_categorical_crossentropy", metrics = "sparse_categorical_accuracy", optimizer = "adam") #I have no idea whether these ones are the best ones to use
 print("Built model")
 
@@ -149,8 +150,8 @@ model.fit([trainVecs, trainWords], np.array(trainCorRars), epochs = 10)
 print("Trained model")
 
 #test the model
-#model.evaluate([testVecs, testWords], np.array(testCorRars))
-#pred = model.predict([testVecs, testWords])
-#pred = [np.where(a == np.amax(a))[0][0] for a in pred] #get most likely outcome (idk why I need [0][0])
-#for i in range(len(pred)): #display visual version of above test
-#    if not pred[i] == testCorRars[i]: print(testNames[i] + ": guess - " + invRarDict[pred[i]] + ", actual - " + invRarDict[testCorRars[i]] + "; " + ("correct" if pred[i] == testCorRars[i] else "wrong"))
+model.evaluate([testVecs, testWords], np.array(testCorRars))
+pred = model.predict([testVecs, testWords])
+pred = [np.where(a == np.amax(a))[0][0] for a in pred] #get most likely outcome (idk why I need [0][0])
+for i in range(len(pred)): #display visual version of above test
+    if not pred[i] == testCorRars[i]: print(testNames[i] + ": guess - " + invRarDict[pred[i]] + ", actual - " + invRarDict[testCorRars[i]] + "; " + ("correct" if pred[i] == testCorRars[i] else "wrong"))
